@@ -343,6 +343,7 @@ class HandlerImpl
 
                 if (conferenceJSONObject == null)
                 {
+                	System.out.println("ERROR: conferenceObject Is null");  // JAMH 17/1/17
                     response.setStatus(
                             HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 }
@@ -571,11 +572,16 @@ class HandlerImpl
                     if ((requestJSONObject == null)
                             || !(requestJSONObject instanceof JSONObject))
                     {
+                        logger.warn("JSON rest request duff info from parser" ); // JAMH 15/1/17
+
                         status = HttpServletResponse.SC_BAD_REQUEST;
                     }
                 }
                 catch (ParseException pe)
                 {
+                    logger.warn("JSON rest request rejected parser exception "+pe.getMessage() ); // JAMH 15/1/17
+                    pe.printStackTrace(System.out);
+
                     status = HttpServletResponse.SC_BAD_REQUEST;
                 }
                 if (status == 0)
@@ -589,7 +595,8 @@ class HandlerImpl
                                     && !requestConferenceIQ.getID().equals(
                                             conference.getID())))
                     {
-                        status = HttpServletResponse.SC_BAD_REQUEST;
+                        logger.warn("JSON rest request problems with conference IQ" ); // JAMH 15/1/17
+status = HttpServletResponse.SC_BAD_REQUEST;
                     }
                     else
                     {
@@ -681,11 +688,15 @@ class HandlerImpl
                 if ((requestJSONObject == null)
                         || !(requestJSONObject instanceof JSONObject))
                 {
-                    status = HttpServletResponse.SC_BAD_REQUEST;
+                    logger.warn("JSON rest request rejected because null object or not JSON Object"); // JAMH 15/1/17
+
+                	status = HttpServletResponse.SC_BAD_REQUEST;
                 }
             }
             catch (ParseException pe)
             {
+                logger.warn("JSON rest request rejected parsing error "+pe.getMessage()); // JAMH 15/1/17
+                pe.printStackTrace(System.out);
                 status = HttpServletResponse.SC_BAD_REQUEST;
             }
             if (status == 0)
@@ -697,6 +708,12 @@ class HandlerImpl
                 if ((requestConferenceIQ == null)
                         || (requestConferenceIQ.getID() != null))
                 {
+                	if (requestConferenceIQ==null) {
+                    logger.warn("JSON rest request rejected conference is null" ); // JAMH 15/1/17
+                	} else {
+                        logger.warn("JSON rest request rejected conference ID not null ="+requestConferenceIQ.getID() ); // JAMH 15/1/17
+                	}
+
                     status = HttpServletResponse.SC_BAD_REQUEST;
                 }
                 else
@@ -722,7 +739,8 @@ class HandlerImpl
                     }
                     catch (Exception e)
                     {
-                        status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+                    	e.printStackTrace(System.out);  // JAMH 17/1/17
+                    	status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
                     }
                     if (status == 0 && responseConferenceIQ != null)
                     {
@@ -744,6 +762,8 @@ class HandlerImpl
         }
         else
         {
+            logger.warn("JSON rest request rejected because content type not JSON "); // JAMH 15/1/17
+
             response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
         }
     }
@@ -757,6 +777,7 @@ class HandlerImpl
 
         if (videobridge == null)
         {
+        	
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             return;
         }
@@ -776,12 +797,15 @@ class HandlerImpl
             if ((requestJSONObject == null)
                 || !(requestJSONObject instanceof JSONObject))
             {
+                logger.warn("JSON rest request rejected parser returns duff info" ); // JAMH 15/1/17
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             }
         }
         catch (ParseException pe)
         {
+            logger.warn("JSON rest request rejected parser exception "+pe.getMessage() ); // JAMH 15/1/17
+            pe.printStackTrace(System.out);
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
@@ -792,6 +816,7 @@ class HandlerImpl
 
         if ((requestShutdownIQ == null))
         {
+            logger.warn("JSON rest request shutdown IQ is null" ); // JAMH 15/1/17
             status = HttpServletResponse.SC_BAD_REQUEST;
         }
         else
@@ -962,6 +987,8 @@ class HandlerImpl
         }
     }
 
+    private static final String STATUS_TARGET = "/status";
+
     /**
      * {@inheritDoc}
      */
@@ -973,9 +1000,21 @@ class HandlerImpl
             HttpServletResponse response)
         throws IOException,
                ServletException
-    {
+    { 
+    	
+       	if (target.toLowerCase().startsWith(STATUS_TARGET)) { // JAMH 20/1/17
+        	Status.handle(target,request,response,getVideobridge());
+        	baseRequest.setHandled(true);
+        	return;	
+        	}
+
+    	
+    	
         super.handleJSON(target, baseRequest, request, response);
 
+        logger.info("JSON rest request "+target+" "+request.getMethod()); // JAMH 15/1/17
+
+        
         if (baseRequest.isHandled())
             return; // The super implementation has handled the request.
 
